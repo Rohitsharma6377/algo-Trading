@@ -29,17 +29,30 @@ export default function Dashboard() {
     };
 
 
+    const initRef = React.useRef(false);
+
     useEffect(() => {
+        if (initRef.current) return;
+        initRef.current = true;
+
         fetchUser();
         initSocket();
+
+        // fetchPortfolio is safe to call
         fetchPortfolio();
 
         // Safety timeout
         const timer = setTimeout(() => {
-            if (!isAuthenticated) setShowLoginLink(true);
+            if (!useUserStore.getState().isAuthenticated) {
+                // Check if we are really stuck or just not logged in (which is fine)
+                // If isLoading is still true, then we are stuck.
+                if (useUserStore.getState().isLoading) {
+                    setShowLoginLink(true);
+                }
+            }
         }, 5000);
         return () => clearTimeout(timer);
-    }, [fetchUser, initSocket]);
+    }, []); // Empty dependency array as these actions are stable or guarded
 
 
     useEffect(() => {

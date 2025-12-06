@@ -6,6 +6,7 @@ const useStockStore = create((set, get) => ({
     rankedStocks: [],
     predictions: {}, // { "AAPL": { ...predictionData } }
     isLoadingRankings: false,
+    rankingLastUpdated: 0,
 
     setPrediction: (data) => {
         set((state) => ({
@@ -26,9 +27,16 @@ const useStockStore = create((set, get) => ({
         set((state) => ({ watchlist: state.watchlist.filter((s) => s !== symbol) }));
     },
 
-    fetchRankedStocks: async () => {
-        // Prevent concurrent fetches if already loading
-        if (get().isLoadingRankings) return;
+    fetchRankedStocks: async (force = false) => {
+        const { isLoadingRankings, rankingLastUpdated } = get();
+        const now = Date.now();
+
+        // Prevent concurrent fetches or fetching too frequently (10s cooldown) unless forced
+        if (isLoadingRankings) return;
+        if (!force && (now - rankingLastUpdated < 10000)) {
+            // console.log('Skipping rank fetch (cooldown active)');
+            return;
+        }
 
         set({ isLoadingRankings: true });
         try {
@@ -44,7 +52,7 @@ const useStockStore = create((set, get) => ({
             try {
                 const data = JSON.parse(text);
                 if (data.ranked) {
-                    set({ rankedStocks: data.ranked });
+                    set({ rankedStocks: data.ranked, rankingLastUpdated: now });
                 }
             } catch (err) {
                 console.error('CRITICAL: Rank API returned non-JSON:', text.substring(0, 100));

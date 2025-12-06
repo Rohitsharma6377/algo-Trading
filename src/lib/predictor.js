@@ -14,10 +14,18 @@ export const predictSymbol = async (symbol) => {
     // If no model, maybe trigger training or return null
     if (!model) return { status: 'No Model' };
 
-    // 2. Fetch recent data
-    // We need at least 250 candles to compute indicators properly (SMA200 etc)
-    const data = await OHLC.find({ symbol: cleanSym }).sort({ date: 1 }).lean();
-    if (data.length < 250) return { status: 'Insufficient Data' };
+    // 2. Fetch recent data (Optimized)
+    // We fetch reverse chronological to get latest, but need proper order for calculation
+    // Limit to 500 candles to prevent memory/CPU spikes
+    const recentData = await OHLC.find({ symbol: cleanSym })
+        .sort({ date: -1 })
+        .limit(500)
+        .lean();
+
+    if (recentData.length < 250) return { status: 'Insufficient Data' };
+
+    // Sort back to chronological order (oldest -> newest) for indicator calc
+    const data = recentData.reverse();
 
     // 3. Indicators
     const indicators = calculateIndicators(data);
@@ -29,21 +37,8 @@ export const predictSymbol = async (symbol) => {
     if (!features) return { status: 'Feature Extraction Failed' };
 
     // 5. Predict
-    // Probs: [UP, NEUTRAL, DOWN] based on labels [1,0,0], [0,1,0], [0,0,1] logic?
-    // Wait, in features.js I did:
-    // UP = [1, 0, 0]
-    // NEUTRAL = [0, 1, 0]
-    // DOWN = [0, 0, 1]
-
-    // So distinct indices: 0=UP, 1=NEUTRAL, 2=DOWN. 
-    // Is that correct?
-    // In features.js:
-    // if (change > THRESHOLD) label = [1, 0, 0]; (Index 0)
-    // label = [0, 1, 0]; (Index 1)
-    // if (change < -THRESHOLD) label = [0, 0, 1]; (Index 2)
-
-    const probs = predictTF(model, features);
-    // probs is [p_up, p_neutral, p_down]
+    // Now async to prevent blocking
+    const probs = await predictTF(model, features);
 
     const [pUp, pNeutral, pDown] = probs;
 

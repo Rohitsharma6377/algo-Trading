@@ -220,13 +220,20 @@ async function loadModel(symbol) {
 /**
  * Predict
  */
-function predict(model, featureVector) {
-  return tf.tidy(() => {
-    const input = tf.tensor2d([featureVector]);
-    const output = model.predict(input);
-    const probs = output.dataSync();
+/**
+ * Predict (Async to prevent blocking)
+ */
+async function predict(model, featureVector) {
+  const input = tf.tensor2d([featureVector]);
+  const output = model.predict(input);
+
+  try {
+    const probs = await output.data(); // Non-blocking
     return Array.from(probs);
-  });
+  } finally {
+    input.dispose();
+    output.dispose();
+  }
 }
 
 // Re-export tf for other modules to use safely?

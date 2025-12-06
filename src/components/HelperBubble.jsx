@@ -14,7 +14,7 @@ const HelperBubble = () => {
         // Refresh ranking every 5 minutes
         const interval = setInterval(() => {
             fetchRankedStocks();
-        }, 300000);
+        }, 3000);
 
         return () => clearInterval(interval);
     }, []);
