@@ -52,12 +52,18 @@ const HelperBubble = () => {
                                 <div className="grid grid-cols-2 gap-2 text-left bg-black/40 p-3 rounded-lg border border-white/5 relative z-10">
                                     <div>
                                         <p className="text-[10px] text-gray-500 uppercase">Confidence</p>
-                                        <p className="text-neon-blue font-mono">{(topStock.reliability * 100).toFixed(1)}%</p>
+                                        <p className="text-neon-blue font-mono">
+                                            {((topStock.confidence || topStock.reliability || 0) * 100).toFixed(1)}%
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] text-gray-500 uppercase">Window</p>
                                         <p className="text-white font-mono text-xs">
-                                            {topStock.suggestedBuyWindow ? new Date(topStock.suggestedBuyWindow.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                            {typeof topStock.suggestedBuyWindow === 'string'
+                                                ? topStock.suggestedBuyWindow
+                                                : (topStock.suggestedBuyWindow?.start
+                                                    ? new Date(topStock.suggestedBuyWindow.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                    : 'N/A')}
                                         </p>
                                     </div>
                                 </div>
