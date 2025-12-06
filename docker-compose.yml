@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:7
+    container_name: algotrader-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: algotrader
+
+  # Next.js App
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: algotrader-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/algotrader
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - LIVE_TRADING=false
+      - ALLOW_REAL_TRADES=NO
+    volumes:
+      - ./models_tf:/app/models_tf
+      - ./logs:/app/logs
+      - ./public/exports:/app/public/exports
+
+volumes:
+  mongodb_data:
+    driver: local

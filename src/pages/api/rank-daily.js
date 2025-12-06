@@ -1,0 +1,30 @@
+
+import { predictSymbol } from '../../lib/predictor';
+
+// A default list of popular stocks to rank if none provided
+const COMMON_STOCKS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'AMD', 'NFLX'];
+
+export default async function handler(req, res) {
+    try {
+        const inputStocks = req.body.stocks || COMMON_STOCKS;
+
+        const predictions = await Promise.all(
+            inputStocks.map(async (sym) => {
+                try {
+                    return await predictSymbol(sym);
+                } catch (e) {
+                    return null;
+                }
+            })
+        );
+
+        const validPredictions = predictions.filter(p => p && !p.error);
+
+        // Rank by 'UP' probability
+        validPredictions.sort((a, b) => b.probabilities.up - a.probabilities.up);
+
+        res.status(200).json({ ranked: validPredictions });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
