@@ -6,7 +6,8 @@ const COMMON_STOCKS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'AMD', '
 
 export default async function handler(req, res) {
     try {
-        const inputStocks = req.body.stocks || COMMON_STOCKS;
+        const body = req.body || {};
+        const inputStocks = body.stocks || COMMON_STOCKS;
         console.log(`Ranking stocks: ${inputStocks.join(', ')}`);
 
         const predictions = await Promise.all(

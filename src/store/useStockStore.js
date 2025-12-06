@@ -5,6 +5,7 @@ const useStockStore = create((set, get) => ({
     watchlist: [],
     rankedStocks: [],
     predictions: {}, // { "AAPL": { ...predictionData } }
+    isLoadingRankings: false,
 
     setPrediction: (data) => {
         set((state) => ({
@@ -15,7 +16,6 @@ const useStockStore = create((set, get) => ({
     addToWatchlist: (symbol) => {
         set((state) => {
             if (!state.watchlist.includes(symbol)) {
-                // Socket subscription should be handled by the component or a dedicated effect monitoring watchlist
                 return { watchlist: [...state.watchlist, symbol] };
             }
             return state;
@@ -27,6 +27,10 @@ const useStockStore = create((set, get) => ({
     },
 
     fetchRankedStocks: async () => {
+        // Prevent concurrent fetches if already loading
+        if (get().isLoadingRankings) return;
+
+        set({ isLoadingRankings: true });
         try {
             console.log('Fetching daily rankings...');
             const res = await fetch('/api/rank-daily');
@@ -48,6 +52,8 @@ const useStockStore = create((set, get) => ({
 
         } catch (e) {
             console.error('Rank fetch error:', e);
+        } finally {
+            set({ isLoadingRankings: false });
         }
     },
 }));

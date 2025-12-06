@@ -4,12 +4,18 @@ import useStockStore from '../store/useStockStore';
 
 const HelperBubble = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const { rankedStocks, fetchRankedStocks } = useStockStore();
+    const { rankedStocks, fetchRankedStocks, isLoadingRankings } = useStockStore();
 
     useEffect(() => {
-        fetchRankedStocks();
-        // Refresh ranking ever 5 minutes
-        const interval = setInterval(fetchRankedStocks, 300000);
+        if (!isLoadingRankings && rankedStocks.length === 0) {
+            fetchRankedStocks();
+        }
+
+        // Refresh ranking every 5 minutes
+        const interval = setInterval(() => {
+            fetchRankedStocks();
+        }, 300000);
+
         return () => clearInterval(interval);
     }, []);
 
