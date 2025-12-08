@@ -7,12 +7,12 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const yahooFinance = require('yahoo-finance2').default;
-const OHLCV = require('../models/OHLCV');
+const OHLCV = require('../src/models/OHLCV');
 
 async function fetchData(symbol, startDate, endDate) {
   try {
     const MONGODB_URI = process.env.MONGODB_URI;
-    
+
     if (!MONGODB_URI) {
       throw new Error('MONGODB_URI not defined in .env');
     }
@@ -22,8 +22,8 @@ async function fetchData(symbol, startDate, endDate) {
     console.log('✅ Connected to MongoDB');
 
     const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate 
-      ? new Date(startDate) 
+    const start = startDate
+      ? new Date(startDate)
       : new Date(end.getTime() - 2 * 365 * 24 * 60 * 60 * 1000);
 
     console.log(`📥 Fetching data for ${symbol} from ${start.toDateString()} to ${end.toDateString()}...`);
@@ -81,6 +81,15 @@ async function fetchData(symbol, startDate, endDate) {
     }
 
     console.log(`✅ Data stored: ${inserted} new, ${updated} updated`);
+
+    // Trigger News Fetch
+    console.log('📰 Triggering News Fetch...');
+    const { exec } = require('child_process');
+    exec(`node scripts/fetchNews.js ${symbol}`, (error, stdout, stderr) => {
+      if (error) console.error(`News fetch error: ${error.message}`);
+      if (stderr) console.error(`News fetch stderr: ${stderr}`);
+      if (stdout) console.log(stdout); // Log news fetch output
+    });
 
     await mongoose.connection.close();
     process.exit(0);

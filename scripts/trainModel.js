@@ -6,15 +6,16 @@
 
 require('dotenv').config();
 const mongoose = require('mongoose');
-const OHLCV = require('../models/OHLCV');
-const ModelMeta = require('../models/ModelMeta');
-const { calculateIndicators, extractFeatures, generateLabels, normalizeFeatures } = require('../lib/indicators');
-const { trainModel, saveModel } = require('../lib/mlModel');
+const OHLCV = require('../src/models/OHLCV');
+const ModelMeta = require('../src/models/ModelMeta');
+const { calculateIndicators } = require('../src/lib/indicators');
+const { createTrainingSet, normalizeFeatures } = require('../src/lib/features');
+const { trainModel, saveModel } = require('../src/lib/mlModel');
 
 async function train(symbol) {
   try {
     const MONGODB_URI = process.env.MONGODB_URI;
-    
+
     if (!MONGODB_URI) {
       throw new Error('MONGODB_URI not defined in .env');
     }
@@ -30,30 +31,49 @@ async function train(symbol) {
       .sort({ date: 1 })
       .lean();
 
-    if (!ohlcvData || ohlcvData.length < 300) {
-      console.error(`❌ Insufficient data (need 300+, have ${ohlcvData?.length || 0})`);
+    if (!ohlcvData || ohlcvData.length < 50) {
+      console.error(`❌ Insufficient data (need 50+, have ${ohlcvData?.length || 0})`);
       process.exit(1);
     }
 
     console.log(`📊 Training data: ${ohlcvData.length} bars`);
 
     // Calculate indicators
+    console.log('Calculating indicators...');
     const indicators = calculateIndicators(ohlcvData);
+    console.log('Indicators calculated.');
 
-    // Extract features
-    const allFeatures = [];
-    for (let i = 200; i < ohlcvData.length - 5; i++) {
-      const features = extractFeatures(ohlcvData, indicators, i);
-      allFeatures.push(features);
-    }
+    // Fetch News Sentiment
+    console.log('Fetching sentiment data...');
+    const NewsSentiment = require('../src/models/NewsSentiment');
+    const sentimentData = await NewsSentiment.find({ symbol: symbol.toUpperCase() });
 
-    // Generate labels
-    const labels = generateLabels(ohlcvData.slice(200, -5));
+    const sentimentMap = {};
+    sentimentData.forEach(item => {
+      sentimentMap[item.date.toDateString()] = item.sentimentScore;
+    });
+    console.log(`Found ${sentimentData.length} sentiment records.`);
+
+    // Create Training Set (features + labels)
+    console.log('Creating training set...');
+
+    // createTrainingSet returns { inputs, outputs, dates }
+    // inputs are raw features (not normalized)
+    // outputs are one-hot labels
+    // We pass sentimentMap as 2nd arg
+    const { inputs: allFeatures, outputs: labels } = createTrainingSet(indicators, sentimentMap);
 
     console.log(`✨ Extracted ${allFeatures.length} feature vectors`);
 
+    if (allFeatures.length === 0) {
+      console.error("❌ No features extracted. Check indicator calculation.");
+      process.exit(1);
+    }
+
     // Normalize
     const { normalized, scaler } = normalizeFeatures(allFeatures);
+
+    console.log('Starting training...');
 
     // Train
     const { model, metrics } = await trainModel(normalized, labels, {
@@ -67,7 +87,7 @@ async function train(symbol) {
       'returns', 'hlRatio', 'closePosition', 'volumeChange',
       'sma20Ratio', 'sma50Ratio', 'sma200Ratio', 'rsi',
       'macd', 'macdSignal', 'macdHistogram',
-      'bbPosition', 'bbWidth', 'atr', 'momentum', 'volatility',
+      'bbPosition', 'bbWidth', 'atr', 'momentum', 'volatility', 'sentiment'
     ];
 
     const metadata = {

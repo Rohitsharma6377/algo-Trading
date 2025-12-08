@@ -12,7 +12,9 @@
     "test:watch": "jest --watch",
     "seed-admin": "node scripts/seedAdmin.js",
     "fetch-data": "node scripts/fetchData.js",
-    "train-model": "node scripts/trainModel.js"
+    "train-model": "node scripts/trainModel.js",
+    "auto-setup": "node scripts/auto-setup.js",
+    "quick-setup": "node scripts/quick-setup.js"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
@@ -32,7 +34,7 @@
     "socket.io-client": "^4.6.0",
     "technicalindicators": "^3.1.0",
     "winston": "^3.11.0",
-    "yahoo-finance2": "^2.8.2",
+    "yahoo-finance2": "^2.14.2",
     "zustand": "^4.5.7"
   },
   "devDependencies": {

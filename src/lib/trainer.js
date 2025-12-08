@@ -1,6 +1,6 @@
 
 import dbConnect from './db';
-import OHLC from '../models/OHLC';
+import OHLCV from '../models/OHLCV';
 import { calculateIndicators } from './indicators';
 import { createTrainingSet } from './features';
 import { trainModel as trainTF, saveModel } from './mlModel';
@@ -10,7 +10,7 @@ export const trainModel = async (symbol) => {
     const cleanSym = symbol.toUpperCase();
 
     // 1. Fetch
-    const data = await OHLC.find({ symbol: cleanSym }).sort({ date: 1 }).lean();
+    const data = await OHLCV.find({ symbol: cleanSym }).sort({ date: 1 }).lean();
     if (data.length < 200) throw new Error(`Not enough data for ${cleanSym}`);
 
     // 2. Indicators

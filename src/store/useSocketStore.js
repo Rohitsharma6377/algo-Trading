@@ -27,7 +27,7 @@ const useSocketStore = create((set, get) => ({
 
             if (!socket) {
                 socket = io({
-                    // path: '/socket.io', // Default path
+                    path: '/api/socketio',
                     addTrailingSlash: false,
                     transports: ['websocket'], // Force websocket
                     reconnection: true,

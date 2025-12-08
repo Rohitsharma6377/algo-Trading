@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 
 const usePortfolioStore = create((set) => ({
-    portfolio: null,
+    portfolio: { portfolio: {}, positions: [], openTrades: [] },
     isLoading: false,
 
     fetchPortfolio: async () => {

@@ -26,7 +26,7 @@ export default function PortfolioPage() {
         </div>
     );
 
-    const { portfolio, positions, openTrades, equityCurve } = data;
+    const { portfolio = {}, positions = [], openTrades = [], equityCurve = [] } = data || {};
 
     return (
         <Layout>

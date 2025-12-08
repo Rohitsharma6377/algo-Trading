@@ -69,9 +69,9 @@ class NodeFilesystemIO {
     // Load weights if they exist
     let weightData = null;
     if (fs.existsSync(weightsPath)) {
-      weightData = fs.readFileSync(weightsPath).buffer;
-      // Note: Node Buffer to ArrayBuffer
-      weightData = weightData.slice(weightData.byteOffset, weightData.byteOffset + weightData.byteLength);
+      const buf = fs.readFileSync(weightsPath);
+      // Create a fresh ArrayBuffer copy to avoid offset issues
+      weightData = new Uint8Array(buf).buffer;
     }
 
     return {
@@ -162,7 +162,17 @@ async function trainModel(features, labels, options = {}) {
   xTrain.dispose();
   yTrain.dispose();
 
-  return { model, history: history.history };
+  const h = history.history;
+  const lastIdx = h.loss ? h.loss.length - 1 : 0;
+
+  const metrics = {
+    accuracy: h.acc ? h.acc[lastIdx] : (h.accuracy ? h.accuracy[lastIdx] : 0),
+    valAccuracy: h.val_acc ? h.val_acc[lastIdx] : (h.val_accuracy ? h.val_accuracy[lastIdx] : 0),
+    loss: h.loss ? h.loss[lastIdx] : 0,
+    valLoss: h.val_loss ? h.val_loss[lastIdx] : 0
+  };
+
+  return { model, history: h, metrics };
 }
 
 /**
@@ -184,6 +194,11 @@ async function saveModel(model, symbol) {
   }
 
   console.log(`✅ Model saved for ${symbol}`);
+
+  return {
+    modelPath: dir,
+    modelVersion: `${symbol}_${Date.now()}`
+  };
 }
 
 /**

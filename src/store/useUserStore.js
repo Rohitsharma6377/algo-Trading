@@ -18,9 +18,15 @@ const useUserStore = create((set, get) => ({
 
     fetchUser: async () => {
         // If already loading (and not the initial load), decide if we want to allow it.
-        // But for initial load, we want to proceed.
-        // Let's just set loading true.
-        set({ isLoading: true, error: null });
+        // If we are already authenticated (e.g. fresh from login), don't block UI with loading state
+        const { isAuthenticated } = get();
+        if (!isAuthenticated) {
+            set({ isLoading: true, error: null });
+        } else {
+            // We are refreshing user in background, don't set global loading
+            // But we should ensure we don't leave it true if it was somehow true
+            // set({ isLoading: false }); // Optional safety
+        }
 
         try {
             // Add a timeout to the fetch to prevent indefinite hanging
@@ -40,6 +46,10 @@ const useUserStore = create((set, get) => ({
                 set({ user: null, isAuthenticated: false, error: `Error ${res.status}` });
             }
         } catch (err) {
+            if (err.name === 'AbortError') {
+                console.warn('Fetch user aborted (timeout or cancelled)');
+                return;
+            }
             console.error('Fetch user error:', err);
             // Don't set error for aborts/timeouts if we just want to show "not logged in" state, 
             // but here it's safer to assume not authenticated.

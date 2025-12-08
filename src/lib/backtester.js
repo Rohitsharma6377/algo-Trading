@@ -12,7 +12,8 @@ export const runBacktest = async (
     symbol,
     ohlcData, // Array of { date, open, high, low, close, volume }
     initialCapital = 100000,
-    model = null, // Logic can work without ML if using strict rules, but usually we pass the ML model
+    model = null,
+    sentimentMap = {}, // New: Sentiment Data Map { dateString: score }
     options = {}
 ) => {
     // 1. Calculate Indicators
@@ -46,20 +47,25 @@ export const runBacktest = async (
         let prediction = { prediction: 'NEUTRAL', confidence: 0 };
 
         if (model) {
-            // Need features
-            const feats = extractFeatures(ohlcData, indicators, i);
-            if (feats) {
-                const probs = predict(model, feats);
-                // probs is simple array [p_up, p_neutral, p_down]
-                // need to convert to obj logic seen in signals.js
-                // assuming predict from mlModel returns Array<number> or Object?
-                // mlModel.js export predict returns Array<number> (from my last edit)
+            // New: Get Sentiment
+            const dateKey = date.toDateString(); // Ensure format matches sentimentMap keys
+            const score = sentimentMap[dateKey] || 0;
 
-                // wait, mlModel.js predict returns Array.from(probs)
-                const [pUp, pNeutral, pDown] = probs;
-                if (pUp > pNeutral && pUp > pDown) { prediction = { prediction: 'UP', confidence: pUp }; }
-                else if (pDown > pUp && pDown > pNeutral) { prediction = { prediction: 'DOWN', confidence: pDown }; }
-                else { prediction = { prediction: 'NEUTRAL', confidence: pNeutral }; }
+            // Need features
+            const feats = extractFeatures(ohlcData, indicators, i, score);
+            if (feats) {
+                // predict is async in mlModel.js but here loop handles it? 
+                // mlModel predict is async! We need to await it. 
+                // But runBacktest is async, so we can await. 
+                const probs = await predict(model, feats);
+
+                // probs is simple array [p_up, p_neutral, p_down]
+                if (probs) {
+                    const [pUp, pNeutral, pDown] = probs;
+                    if (pUp > pNeutral && pUp > pDown) { prediction = { prediction: 'UP', confidence: pUp }; }
+                    else if (pDown > pUp && pDown > pNeutral) { prediction = { prediction: 'DOWN', confidence: pDown }; }
+                    else { prediction = { prediction: 'NEUTRAL', confidence: pNeutral }; }
+                }
             }
         }
 

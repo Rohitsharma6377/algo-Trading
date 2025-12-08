@@ -22,6 +22,7 @@ export default function Layout({ children }) {
 
   if (user?.role === 'admin') {
     navigation.push({ name: 'Admin', href: '/admin', icon: '⚙️' });
+    navigation.push({ name: 'Research', href: '/admin/research', icon: '🧪' });
   }
 
   const NavItem = ({ item, isMobile = false }) => {
@@ -114,7 +115,7 @@ export default function Layout({ children }) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen md:pl-64 transition-all duration-300">
-        <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full max-w-[1600px] mx-auto z-10 relative">
+        <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full max-w-full mx-auto z-10 relative">
           {children}
         </main>
 

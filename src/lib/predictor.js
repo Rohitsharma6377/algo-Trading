@@ -3,7 +3,9 @@ import { loadModel, predict as predictTF } from './mlModel';
 import { calculateIndicators } from './indicators';
 import { extractFeatures } from './features';
 import dbConnect from './db';
-import OHLC from '../models/OHLC';
+import OHLC from '../models/OHLCV';
+
+import NewsSentiment from '../models/NewsSentiment';
 
 export const predictSymbol = async (symbol) => {
     await dbConnect();
@@ -30,9 +32,18 @@ export const predictSymbol = async (symbol) => {
     // 3. Indicators
     const indicators = calculateIndicators(data);
 
-    // 4. Extract Feature for LATEST candle
+    // 4. Fetch Latest Sentiment & Extract Feature
+    // Look for sentiment in the last 48 hours to be relevant
+    const recentSentiment = await NewsSentiment.findOne({
+        symbol: cleanSym,
+        date: { $gte: new Date(Date.now() - 48 * 60 * 60 * 1000) }
+    }).sort({ date: -1 });
+
+    const sentimentScore = recentSentiment?.sentimentScore || 0;
+
+    // Pass sentiment to feature extraction
     const lastIdx = indicators.length - 1;
-    const features = extractFeatures(data, indicators, lastIdx);
+    const features = extractFeatures(data, indicators, lastIdx, sentimentScore);
 
     if (!features) return { status: 'Feature Extraction Failed' };
 

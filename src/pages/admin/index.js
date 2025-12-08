@@ -25,6 +25,7 @@ export default function Admin() {
         { name: 'Training', href: '/admin/training' },
         { name: 'Models', href: '/admin/models' },
         { name: 'Logs', href: '/admin/logs' },
+        { name: 'Research', href: '/admin/research' },
     ];
 
     return (
@@ -33,13 +34,13 @@ export default function Admin() {
                 <div className="min-h-screen font-mono p-4 md:p-8 relative overflow-hidden">
                     <div className="absolute inset-0 pointer-events-none z-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] opacity-20"></div>
 
-                    <div className="max-w-6xl mx-auto border-2 border-green-900 bg-gray-900/90 rounded-lg p-6 shadow-[0_0_20px_rgba(0,255,0,0.1)] relative z-10">
+                    <div className="w-full h-full min-h-[85vh] border-2 border-green-900 bg-gray-900/90 rounded-lg p-6 shadow-[0_0_20px_rgba(0,255,0,0.1)] relative z-10 flex flex-col">
 
                         {/* Header */}
                         <div className="flex justify-between items-end border-b-2 border-green-900 pb-4 mb-8">
                             <div>
                                 <h1 className="text-4xl font-bold tracking-tighter text-neon-green glitch-text">COMMAND_CENTER</h1>
-                                <p className="text-xs text-green-700 uppercase tracking-widest mt-1">ROOT ACCESS GRANTED // USER: {user.email}</p>
+                                <p className="text-xs text-green-700 uppercase tracking-widest mt-1">ROOT ACCESS GRANTED // USER: {user?.email || 'SYSTEM'}</p>
                             </div>
                         </div>
 
@@ -96,9 +97,8 @@ export default function Admin() {
                                 </div>
                             </div>
 
-                            {/* Terminal Output */}
-                            <div className="lg:col-span-2">
-                                <div className="bg-black border border-green-800 h-[500px] p-4 font-mono text-sm overflow-y-auto relative">
+                            <div className="lg:col-span-2 flex flex-col h-full">
+                                <div className="bg-black border border-green-800 flex-1 min-h-[500px] p-4 font-mono text-sm overflow-y-auto relative">
                                     <div className="absolute top-2 right-4 text-[10px] text-green-900">SYS_LOG.TXT</div>
                                     {logs.length === 0 && (
                                         <div className="h-full flex flex-col items-center justify-center text-green-900 opacity-50">

@@ -87,21 +87,23 @@ export default function Dashboard() {
     };
 
 
-    if (userLoading || !isAuthenticated) return (
+    useEffect(() => {
+        if (user && user.role === 'admin') {
+            router.push('/admin');
+        }
+    }, [user, router]);
+
+    // Show loading only if genuinely loading user or checking auth
+    if (userLoading) return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center text-white">
             <div className="w-16 h-16 border-4 border-neon-blue border-t-transparent rounded-full animate-spin"></div>
             <p className="mt-4 font-mono text-neon-blue animate-pulse">INITIALIZING SYSTEM...</p>
-
-            {showLoginLink && (
-                <div className="mt-8 text-center animate-fade-in">
-                    <p className="text-red-400 text-xs mb-2">Response Timeout</p>
-                    <Link href="/auth/login" className="text-neon-green border-b border-neon-green/50 pb-1 hover:text-white transition">
-                        Force Manual Login &rarr;
-                    </Link>
-                </div>
-            )}
         </div>
     );
+
+    // If not authenticated and not loading, the useEffect above will redirect. 
+    // We render nothing or a simple redirecting message while that happens.
+    if (!isAuthenticated) return null;
 
     return (
         <Layout>

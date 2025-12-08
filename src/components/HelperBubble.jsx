@@ -10,13 +10,7 @@ const HelperBubble = () => {
         if (!isLoadingRankings && rankedStocks.length === 0) {
             fetchRankedStocks();
         }
-
-        // Refresh ranking every 5 minutes
-        const interval = setInterval(() => {
-            fetchRankedStocks();
-        }, 3000);
-
-        return () => clearInterval(interval);
+        // Removed automatic interval to prevent server overload
     }, []);
 
     const topStock = rankedStocks.length > 0 ? rankedStocks[0] : null;
